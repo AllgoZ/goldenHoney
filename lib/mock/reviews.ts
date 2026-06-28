@@ -1,0 +1,26 @@
+import type { Review } from '@/types'
+
+export const reviews: Review[] = [
+  { id: 1,  productId: 1,  userName: 'Priya Sharma',   userInitial: 'PS', rating: 5, title: 'Absolutely incredible quality',       body: 'I have tried many honey brands but Golden Forest is in a different league. The depth of flavour is extraordinary and you can just tell it\'s completely natural. My whole family is hooked.',                createdAt: '2026-04-15', verified: true,  helpful: 34 },
+  { id: 2,  productId: 1,  userName: 'Rahul Mehta',    userInitial: 'RM', rating: 5, title: 'Best raw honey I\'ve ever tasted',      body: 'I was sceptical but this honey converted me. Completely different from supermarket honey — you can taste the forest. Will never go back.',                                                           createdAt: '2026-03-22', verified: true,  helpful: 28 },
+  { id: 3,  productId: 1,  userName: 'Sunita Nair',    userInitial: 'SN', rating: 4, title: 'Excellent honey, quick delivery',        body: 'Delicious and clearly high quality. Delivery was fast and packaging was beautiful. Slightly expensive but worth every rupee.',                                                                    createdAt: '2026-03-10', verified: true,  helpful: 19 },
+  { id: 4,  productId: 1,  userName: 'Arjun Reddy',    userInitial: 'AR', rating: 5, title: 'Pure liquid gold',                       body: 'I use this every morning with warm water and the difference in my energy levels is noticeable. The colour and aroma alone tell you this is something special.',                                       createdAt: '2026-02-28', verified: true,  helpful: 41 },
+  { id: 5,  productId: 2,  userName: 'Kavitha Iyer',   userInitial: 'KI', rating: 5, title: 'Worth every rupee',                      body: 'The rare wild honey is something else entirely. The flavour is almost smoky with a complexity I\'ve never experienced in honey. Already ordered my second jar.',                                       createdAt: '2026-04-01', verified: true,  helpful: 22 },
+  { id: 6,  productId: 2,  userName: 'Vikram Singh',   userInitial: 'VS', rating: 5, title: 'Truly rare and extraordinary',           body: 'As someone who has visited Borneo forests, this honey transported me back. Unmistakably wild. Precious stuff.',                                                                                       createdAt: '2026-03-15', verified: true,  helpful: 17 },
+  { id: 7,  productId: 4,  userName: 'Deepa Pillai',   userInitial: 'DP', rating: 5, title: 'Perfect gift — beautifully presented',   body: 'Bought this for my parents\' anniversary and they were genuinely moved by the presentation. The wooden box is gorgeous and all three honeys are delicious.',                                          createdAt: '2026-04-20', verified: true,  helpful: 56 },
+  { id: 8,  productId: 4,  userName: 'Amit Gupta',     userInitial: 'AG', rating: 5, title: 'The best corporate gift I\'ve found',    body: 'I ordered 20 sets for our clients this Diwali. Everyone loved them. Premium, thoughtful, unique. Will definitely reorder.',                                                                           createdAt: '2026-01-10', verified: true,  helpful: 38 },
+  { id: 9,  productId: 7,  userName: 'Meera Krishnan', userInitial: 'MK', rating: 5, title: 'My 2-year-old is obsessed',              body: 'These animals are so beautifully made. My daughter has named every single one and plays with them for hours. The quality is outstanding — no rough edges, safe paint, solid wood.',                       createdAt: '2026-04-08', verified: true,  helpful: 47 },
+  { id: 10, productId: 7,  userName: 'Rohan Verma',    userInitial: 'RV', rating: 5, title: 'Heirloom quality toys',                  body: 'I bought these for my son and immediately started thinking about passing them to my grandchildren someday. That\'s the quality level we\'re talking about.',                                              createdAt: '2026-03-05', verified: true,  helpful: 33 },
+  { id: 11, productId: 6,  userName: 'Dr. Nandini Bose', userInitial: 'NB', rating: 5, title: 'Genuine MGO 400+, verified it myself', body: 'As a naturopathic physician I\'m particular about honey quality. This is genuinely MGO 400+ — the flavour profile and viscosity are consistent with high-grade Manuka. Impressive.',                   createdAt: '2026-02-14', verified: true,  helpful: 61 },
+  { id: 12, productId: 11, userName: 'Leela Rajaram',  userInitial: 'LR', rating: 5, title: 'Most thoughtful gift ever',              body: 'Received this as a baby shower gift. The wooden box, the honey, the candle, the toy — every element is perfection. Cried happy tears opening it.',                                                       createdAt: '2026-04-25', verified: true,  helpful: 72 },
+]
+
+export function getReviewsByProductId(productId: number): Review[] {
+  return reviews.filter((r) => r.productId === productId)
+}
+
+export function getAverageRating(productId: number): number {
+  const productReviews = getReviewsByProductId(productId)
+  if (!productReviews.length) return 0
+  return productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length
+}

@@ -1,0 +1,124 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ──────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isAdmin() {
+      return isSignedIn() && getUserData().role == 'admin';
+    }
+    function isSuperAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'super_admin';
+    }
+    function hasAdminPermission(permission) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.permissions[permission] == true;
+    }
+
+    // ── customers ─────────────────────────────────────────────
+    // Document ID = 10-digit phone number (e.g. 9876543210)
+    // Open read/write — no Firebase Auth for phone users (TODO: secure with OTP)
+    match /customers/{phone} {
+      allow read, write: if true;
+
+      match /addresses/{addressId} {
+        allow read, write: if true;
+      }
+
+      match /orders/{orderId} {
+        allow read, write: if true;
+      }
+    }
+
+    // ── products ──────────────────────────────────────────────
+    // Anyone can read products. Only admins can write.
+    match /products/{productId} {
+      allow read:  if true;
+      allow write: if isSuperAdmin() || hasAdminPermission('manageProducts');
+    }
+
+    // ── categories ────────────────────────────────────────────
+    match /categories/{categoryId} {
+      allow read:  if true;
+      allow write: if isSuperAdmin() || hasAdminPermission('manageProducts');
+    }
+
+    // ── orders ────────────────────────────────────────────────
+    // Read/create open — phone customers don't have Firebase Auth.
+    // Updates restricted to admins or limited payment fields by auth users.
+    match /orders/{orderId} {
+      allow read:   if true;
+      allow create: if true;
+      allow update: if isSuperAdmin() || hasAdminPermission('manageOrders')
+                    || (isSignedIn()
+                        && isOwner(resource.data.userId)
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['paymentStatus', 'razorpayOrderId', 'razorpayPaymentId']));
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── reviews ───────────────────────────────────────────────
+    // Anyone can read approved reviews. Signed-in users can submit.
+    // Admins can approve/reject.
+    match /reviews/{reviewId} {
+      allow read:   if resource.data.approved == true || isAdmin() || isSuperAdmin();
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.approved == false;
+      allow update: if hasAdminPermission('manageReviews')
+                    || (isSignedIn()
+                        && isOwner(resource.data.userId)
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['helpful']));
+      allow delete: if hasAdminPermission('manageReviews');
+    }
+
+    // ── coupons ───────────────────────────────────────────────
+    // Signed-in users can read (to validate). Only admins can write.
+    match /coupons/{code} {
+      allow read:   if isSignedIn();
+      allow write:  if hasAdminPermission('manageCoupons');
+    }
+
+
+    // ── banners ───────────────────────────────────────────────
+    match /banners/{bannerId} {
+      allow read:  if true;
+      allow write: if isSuperAdmin() || hasAdminPermission('manageProducts');
+    }
+
+    // ── settings ──────────────────────────────────────────────
+    match /settings/{key} {
+      allow read:  if true;
+      allow write: if hasAdminPermission('manageSettings');
+    }
+
+    // ── notifications ─────────────────────────────────────────
+    match /notifications/{notificationId} {
+      allow read:   if isSignedIn() && isOwner(resource.data.userId);
+      allow update: if isSignedIn()
+                    && isOwner(resource.data.userId)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create, delete: if isAdmin();
+    }
+
+    // ── admins ────────────────────────────────────────────────
+    // Super admins can manage. First admin can be created via setup (no auth required).
+    match /admins/{uid} {
+      allow read:   if isSignedIn() && (isOwner(uid) || isSuperAdmin());
+      allow create: if resource == null; // Allow setup endpoint to create first admin
+      allow update, delete: if isSuperAdmin();
+    }
+
+  }
+}

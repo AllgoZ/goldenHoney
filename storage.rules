@@ -1,0 +1,67 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── Helper functions ──────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    function isPDF() {
+      return request.resource.contentType == 'application/pdf';
+    }
+    function isSmallFile() {
+      return request.resource.size < 5 * 1024 * 1024; // 5 MB
+    }
+    function isAdmin() {
+      return request.auth.token.role == 'admin';
+    }
+
+    // ── products/ ─────────────────────────────────────────────
+    // Only admins upload. Anyone can read (public product images).
+    match /products/{allPaths=**} {
+      allow read:  if true;
+      allow write: if isSignedIn() && isAdmin() && isImage() && isSmallFile();
+    }
+
+    // ── banners/ ──────────────────────────────────────────────
+    match /banners/{allPaths=**} {
+      allow read:  if true;
+      allow write: if isSignedIn() && isAdmin() && isImage() && isSmallFile();
+    }
+
+    // ── users/{uid}/ ──────────────────────────────────────────
+    // Users can upload their own avatar (image, max 2 MB).
+    match /users/{uid}/{allPaths=**} {
+      allow read:  if isSignedIn();
+      allow write: if isOwner(uid) && isImage() && request.resource.size < 2 * 1024 * 1024;
+    }
+
+    // ── reviews/{reviewId}/ ───────────────────────────────────
+    // Signed-in users can upload review images (max 3 MB each).
+    match /reviews/{reviewId}/{allPaths=**} {
+      allow read:  if true;
+      allow write: if isSignedIn() && isImage() && request.resource.size < 3 * 1024 * 1024;
+    }
+
+    // ── certificates/ ─────────────────────────────────────────
+    // Admins upload quality/lab certificates. Anyone can read.
+    match /certificates/{allPaths=**} {
+      allow read:  if true;
+      allow write: if isSignedIn() && isAdmin() && (isImage() || isPDF()) && isSmallFile();
+    }
+
+    // ── invoices/{uid}/ ───────────────────────────────────────
+    // Invoices are per-user. Only that user + admins can read.
+    match /invoices/{uid}/{allPaths=**} {
+      allow read:  if isOwner(uid) || (isSignedIn() && isAdmin());
+      allow write: if isSignedIn() && isAdmin() && isPDF() && isSmallFile();
+    }
+
+  }
+}
