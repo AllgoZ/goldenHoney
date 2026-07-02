@@ -18,6 +18,19 @@ import type { FSAddress, FSOrderItem } from '@/types/firebase'
 
 /* ────────────────────────────────────────────────────────────── */
 
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window !== 'undefined' && 'Razorpay' in window) { resolve(true); return }
+    const script = document.createElement('script')
+    script.src     = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.onload  = () => resolve(true)
+    script.onerror = () => resolve(false)
+    document.body.appendChild(script)
+  })
+}
+
+/* ────────────────────────────────────────────────────────────── */
+
 const STATES = [
   'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat',
   'Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh',
@@ -63,6 +76,9 @@ export default function CheckoutPage() {
   const [couponDiscount,  setCouponDiscount]  = useState(0)
   const [couponError,     setCouponError]     = useState('')
   const [couponLoading,   setCouponLoading]   = useState(false)
+
+  /* ── Payment method ──────────────────────────────────────── */
+  const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'cod'>('razorpay')
 
   /* ── UI state ─────────────────────────────────────────────── */
   const [loading, setLoading] = useState(false)
@@ -194,34 +210,116 @@ export default function CheckoutPage() {
         lineTotal:      i.unitPrice * i.quantity,
       }))
 
-      /* Create order (dual-write: orders/ + customers/{id}/orders/) */
-      const order = await createOrderForCustomer(user.id, {
-        userId:        user.id,
-        userName:      name.trim(),
-        userEmail:     email.trim(),
-        userPhone:     `+91${phone.trim()}`,
-        items:         orderItems,
+      /* Shared order fields */
+      const baseData = {
+        userId:    user.id,
+        userName:  name.trim(),
+        userEmail: email.trim(),
+        userPhone: `+91${phone.trim()}`,
+        items:     orderItems,
         subtotal,
-        discount:      couponDiscount,
+        discount:  couponDiscount,
         shipping,
         tax,
-        total:         grandTotal,
+        total:     grandTotal,
         ...(appliedCoupon && { couponCode: couponCode.toUpperCase() }),
-        paymentMethod: 'cod',
-        paymentStatus: 'pending',
-        orderStatus:   'pending',
         shippingAddress,
-      })
-
-      if (appliedCoupon) {
-        redeemCoupon(appliedCoupon.code).catch(() => {})
       }
-      clearCart()
-      router.push(`/order-success?id=${order.id}&n=${order.orderNumber}`)
+
+      if (paymentMethod === 'cod') {
+        /* ── Cash on Delivery ──────────────────────────────── */
+        const order = await createOrderForCustomer(user!.id, {
+          ...baseData,
+          paymentMethod: 'cod',
+          paymentStatus: 'pending',
+          orderStatus:   'pending',
+        })
+
+        fetch('/api/email/order-placed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(order),
+        }).catch(() => {})
+
+        if (appliedCoupon) redeemCoupon(appliedCoupon.code).catch(() => {})
+        clearCart()
+        router.push(`/order-success?id=${order.id}&n=${order.orderNumber}`)
+      } else {
+        /* ── Online payment via Razorpay ───────────────────── */
+        const loaded = await loadRazorpayScript()
+        if (!loaded) throw new Error('Could not load payment gateway. Please try again.')
+
+        const rpRes = await fetch('/api/razorpay/create-order', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ amount: Math.round(grandTotal * 100) }),
+        })
+        if (!rpRes.ok) throw new Error('Could not initiate payment. Please try again.')
+        const rzpOrder = await rpRes.json()
+
+        await new Promise<void>((resolve, reject) => {
+          const rzp = new (window as any).Razorpay({
+            key:         process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+            order_id:    rzpOrder.id,
+            amount:      rzpOrder.amount,
+            currency:    'INR',
+            name:        'Golden Honey',
+            description: 'Honey & Wooden Toys',
+            prefill: {
+              name:    name.trim(),
+              email:   email.trim(),
+              contact: `+91${phone.trim()}`,
+            },
+            theme: { color: '#F4A90B' },
+            handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
+              try {
+                const verRes = await fetch('/api/razorpay/verify', {
+                  method:  'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body:    JSON.stringify(response),
+                })
+                if (!verRes.ok) throw new Error('Payment verification failed. Contact support.')
+
+                const order = await createOrderForCustomer(user!.id, {
+                  ...baseData,
+                  paymentMethod:     'razorpay',
+                  paymentStatus:     'paid',
+                  orderStatus:       'paid',
+                  razorpayOrderId:   response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                })
+
+                // Fire admin notification — non-blocking
+                fetch('/api/email/order-placed', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(order),
+                }).catch(() => {})
+
+                if (appliedCoupon) redeemCoupon(appliedCoupon.code).catch(() => {})
+                clearCart()
+                router.push(`/order-success?id=${order.id}&n=${order.orderNumber}`)
+                resolve()
+              } catch (e) {
+                reject(e)
+              }
+            },
+            modal: {
+              ondismiss: () => reject(new Error('rzp_dismissed')),
+            },
+          })
+          rzp.on('payment.failed', (r: any) => {
+            reject(new Error(r.error?.description ?? 'Payment failed'))
+          })
+          rzp.open()
+        })
+      }
 
     } catch (err) {
-      console.error('Order placement failed:', err)
-      setErrors({ submit: 'Something went wrong. Please try again.' })
+      if (err instanceof Error && err.message !== 'rzp_dismissed') {
+        console.error('Order failed:', err)
+        setErrors({ submit: (err as Error).message || 'Something went wrong. Please try again.' })
+      }
     } finally {
       setLoading(false)
     }
@@ -412,18 +510,32 @@ export default function CheckoutPage() {
             {/* Payment */}
             <div className="bg-white rounded-xl p-6 border border-black/5 shadow-sm">
               <h2 className="font-heading font-semibold text-base text-onyx mb-4">Payment Method</h2>
-              <label className="flex items-center gap-3 p-4 rounded-xl border-2 border-honey bg-honey/5 cursor-pointer">
-                <div className="w-4 h-4 rounded-full border-2 border-honey flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-honey" />
-                </div>
-                <div>
-                  <p className="font-semibold text-sm text-onyx">Cash on Delivery (COD)</p>
-                  <p className="text-xs text-onyx/40 mt-0.5">Pay in cash when your order arrives</p>
-                </div>
-              </label>
-              <p className="text-xs text-onyx/30 mt-3">
-                Online payment via UPI / Cards coming soon.
-              </p>
+              <div className="space-y-3">
+                {/* Razorpay */}
+                <button type="button" onClick={() => setPaymentMethod('razorpay')}
+                  className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-[border-color,background-color] duration-150 text-left ${paymentMethod === 'razorpay' ? 'border-honey bg-honey/5' : 'border-black/8 hover:border-black/20'}`}>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${paymentMethod === 'razorpay' ? 'border-honey' : 'border-black/20'}`}>
+                    {paymentMethod === 'razorpay' && <div className="w-2 h-2 rounded-full bg-honey" />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm text-onyx">Pay Online</p>
+                    <p className="text-xs text-onyx/40 mt-0.5">UPI · Credit / Debit Card · Net Banking · Wallets</p>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 px-2 py-0.5 rounded-chip">Razorpay</span>
+                </button>
+                {/* COD */}
+                <button type="button" onClick={() => setPaymentMethod('cod')}
+                  className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-[border-color,background-color] duration-150 text-left ${paymentMethod === 'cod' ? 'border-honey bg-honey/5' : 'border-black/8 hover:border-black/20'}`}>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${paymentMethod === 'cod' ? 'border-honey' : 'border-black/20'}`}>
+                    {paymentMethod === 'cod' && <div className="w-2 h-2 rounded-full bg-honey" />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm text-onyx">Cash on Delivery</p>
+                    <p className="text-xs text-onyx/40 mt-0.5">Pay when your order arrives</p>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wide bg-green-50 text-green-700 px-2 py-0.5 rounded-chip">COD</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -518,7 +630,7 @@ export default function CheckoutPage() {
                 onClick={handleOrder}
                 disabled={!user?.isLoggedIn || items.length === 0}
               >
-                Place Order
+                {paymentMethod === 'cod' ? 'Place Order' : 'Pay Now'}
               </Button>
 
               {!user?.isLoggedIn && (

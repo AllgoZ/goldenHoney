@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, ShoppingCart, Zap, Check, X, Plus, Minus } from 'lucide-react'
+import { Heart, ShoppingCart, Zap, X, Plus, Minus } from 'lucide-react'
 import type { FSProduct } from '@/types/firebase'
 import { formatINR, discountPct } from '@/lib/utils'
 import { useCart } from '@/hooks/useCart'
@@ -23,26 +23,31 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   const [imgErr, setImgErr] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerMode, setPickerMode] = useState<'add' | 'buy'>('add')
-  const [added, setAdded] = useState(false)
   const [selectedWeight, setSelectedWeight] = useState(product.weightOptions[0].label)
   const [quantity, setQuantity] = useState(1)
 
-  const { addToCart } = useCart()
+  const { addToCart, items, removeItem, updateQuantity } = useCart()
   const { toggle, has } = useWishlist()
   const { requireAuth } = useAuthGate()
   const wished = has(product.id)
 
   const activeOption =
     product.weightOptions.find((w) => w.label === selectedWeight) ?? product.weightOptions[0]
-  const pct = discountPct(activeOption.price, activeOption.oldPrice)
+  const pct         = discountPct(activeOption.price, activeOption.oldPrice)
+  const cartItem     = items.find(
+    (i) => String(i.product.id) === String(product.id) && i.selectedWeight === selectedWeight
+  )
+  const cartQty      = cartItem?.quantity ?? 0
+  const isInCart     = cartQty > 0
+  const isOutOfStock = activeOption.stock === 0
+  const isLowStock   = activeOption.stock > 0 && activeOption.stock <= 3
+  const maxQty       = Math.min(10, activeOption.stock || 10)
 
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault()
     requireAuth(() => {
       if (product.weightOptions.length === 1) {
         addToCart(product, activeOption.label, activeOption.price, 1)
-        setAdded(true)
-        setTimeout(() => setAdded(false), 2000)
       } else {
         setPickerMode('add')
         setPickerOpen(true)
@@ -54,8 +59,8 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     e.preventDefault()
     requireAuth(() => {
       if (product.weightOptions.length === 1) {
-        addToCart(product, activeOption.label, activeOption.price, 1)
-        router.push('/checkout')
+        if (!isInCart) addToCart(product, activeOption.label, activeOption.price, 1)
+        router.push('/cart')
       } else {
         setPickerMode('buy')
         setPickerOpen(true)
@@ -66,14 +71,15 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   function handleConfirm(e: React.MouseEvent) {
     e.preventDefault()
     requireAuth(() => {
-      addToCart(product, selectedWeight, activeOption.price, quantity)
-      setPickerOpen(false)
-      setQuantity(1)
       if (pickerMode === 'buy') {
-        router.push('/checkout')
+        if (!isInCart) addToCart(product, selectedWeight, activeOption.price, quantity)
+        setPickerOpen(false)
+        setQuantity(1)
+        router.push('/cart')
       } else {
-        setAdded(true)
-        setTimeout(() => setAdded(false), 2000)
+        addToCart(product, selectedWeight, activeOption.price, quantity)
+        setPickerOpen(false)
+        setQuantity(1)
       }
     })
   }
@@ -87,6 +93,22 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     e.preventDefault()
     setPickerOpen(false)
     setQuantity(1)
+  }
+
+  function handleDecrement(e: React.MouseEvent) {
+    e.preventDefault()
+    if (cartQty <= 1) {
+      removeItem(product.id, selectedWeight)
+    } else {
+      updateQuantity(product.id, selectedWeight, cartQty - 1)
+    }
+  }
+
+  function handleIncrement(e: React.MouseEvent) {
+    e.preventDefault()
+    if (cartQty < maxQty) {
+      updateQuantity(product.id, selectedWeight, cartQty + 1)
+    }
   }
 
   return (
@@ -141,7 +163,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             <StarRating rating={product.rating} size="sm" showCount count={product.reviewCount} />
 
             {/* Price row — pushed to bottom */}
-            <div className="flex items-baseline gap-2 mb-3 mt-auto">
+            <div className="flex items-baseline gap-2 mb-1 mt-auto">
               <span className="font-bold text-base text-onyx">
                 {formatINR(activeOption.price)}
               </span>
@@ -151,6 +173,18 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                 </span>
               )}
               <span className="text-xs text-onyx/30 ml-auto">{activeOption.label}</span>
+            </div>
+
+            {/* Stock status */}
+            <div className="mb-3 min-h-[16px]">
+              {isOutOfStock && (
+                <span className="text-[11px] font-semibold text-red-500">Out of stock</span>
+              )}
+              {isLowStock && (
+                <span className="text-[11px] font-semibold text-orange-500">
+                  Only {activeOption.stock} left
+                </span>
+              )}
             </div>
 
             {/* Desktop inline picker — hidden on mobile */}
@@ -201,9 +235,9 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                         </button>
                         <span className="w-5 text-center text-sm font-semibold text-onyx">{quantity}</span>
                         <button
-                          onClick={(e) => { e.preventDefault(); setQuantity(Math.min(10, quantity + 1)) }}
+                          onClick={(e) => { e.preventDefault(); setQuantity(Math.min(Math.min(10, activeOption.stock || 10), quantity + 1)) }}
                           className="w-7 h-7 rounded-lg border border-onyx/15 flex items-center justify-center hover:bg-honey/10 transition-[background-color,opacity] duration-150 ease-out disabled:opacity-30"
-                          disabled={quantity >= 10}
+                          disabled={quantity >= Math.min(10, activeOption.stock || 10)}
                         >
                           <Plus size={11} />
                         </button>
@@ -236,27 +270,39 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             {/* Add / Buy buttons */}
             {!pickerOpen && (
               <div className="flex gap-2">
-                <button
-                  onClick={handleAdd}
-                  className={`flex-1 h-9 rounded-xl text-xs font-semibold transition-[background-color,transform] duration-150 ease-out ${
-                    added
-                      ? 'bg-green-500 text-white'
-                      : 'bg-honey text-onyx hover:bg-honey-dark'
-                  }`}
-                >
-                  {added ? (
-                    <span className="flex items-center justify-center gap-1">
-                      <Check size={12} /> Added
+                {isInCart ? (
+                  /* Inline quantity stepper */
+                  <div className="flex-1 flex items-center h-9 rounded-xl border-2 border-honey bg-honey/5 overflow-hidden">
+                    <button
+                      onClick={handleDecrement}
+                      className="h-full px-3 text-onyx hover:bg-honey/30 transition-[background-color] duration-150 flex items-center justify-center"
+                    >
+                      <Minus size={13} />
+                    </button>
+                    <span className="flex-1 text-center text-sm font-bold text-onyx tabular-nums">
+                      {cartQty}
                     </span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-1">
-                      <ShoppingCart size={12} /> Add
-                    </span>
-                  )}
-                </button>
+                    <button
+                      onClick={handleIncrement}
+                      disabled={cartQty >= maxQty}
+                      className="h-full px-3 text-onyx hover:bg-honey/30 transition-[background-color] duration-150 flex items-center justify-center disabled:opacity-30"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleAdd}
+                    disabled={isOutOfStock}
+                    className="flex-1 h-9 rounded-xl text-xs font-semibold bg-honey text-onyx hover:bg-honey-dark transition-[background-color] duration-150 ease-out flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ShoppingCart size={12} /> {isOutOfStock ? 'Out of Stock' : 'Add'}
+                  </button>
+                )}
                 <button
                   onClick={handleBuy}
-                  className="flex-1 h-9 rounded-xl text-xs font-semibold bg-onyx text-white hover:bg-onyx/80 transition-[background-color] duration-150 ease-out flex items-center justify-center gap-1"
+                  disabled={isOutOfStock}
+                  className="flex-1 h-9 rounded-xl text-xs font-semibold bg-onyx text-white hover:bg-onyx/80 transition-[background-color] duration-150 ease-out flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Zap size={12} /> Buy
                 </button>
@@ -360,8 +406,8 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                     </button>
                     <span className="text-lg font-bold text-onyx tabular-nums">{quantity}</span>
                     <button
-                      onClick={(e) => { e.preventDefault(); setQuantity(Math.min(10, quantity + 1)) }}
-                      disabled={quantity >= 10}
+                      onClick={(e) => { e.preventDefault(); setQuantity(Math.min(Math.min(10, activeOption.stock || 10), quantity + 1)) }}
+                      disabled={quantity >= Math.min(10, activeOption.stock || 10)}
                       className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center disabled:opacity-30 active:scale-95 transition-transform"
                     >
                       <Plus size={14} className="text-onyx" />

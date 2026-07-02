@@ -34,7 +34,7 @@ export default function HomePage() {
         <div className="absolute inset-0">
           {/* Mobile image (default), desktop image swapped via CSS */}
           <Image
-            src="/hero-mobile.webp"
+            src="https://res.cloudinary.com/dhjcr3vdl/image/upload/v1782993653/golden-honey/wildhoney.webp"
             alt="Golden honey"
             fill
             priority
@@ -68,11 +68,17 @@ export default function HomePage() {
               delivered to your door.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/shop">
-                <Button size="lg" className="min-w-[180px]">
-                  Shop Now <ArrowRight size={18} />
-                </Button>
-              </Link>
+              <motion.div
+                className="rounded-full"
+                animate={{ boxShadow: ['0 0 0px 0px rgba(246,196,83,0)', '0 0 22px 8px rgba(246,196,83,0.55)', '0 0 0px 0px rgba(246,196,83,0)'] }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <Link href="/shop">
+                  <Button size="lg" className="min-w-[180px]">
+                    Shop Now <ArrowRight size={18} />
+                  </Button>
+                </Link>
+              </motion.div>
               <Link href="/about">
                 <Button variant="ghost" size="lg" className="text-white hover:text-white hover:bg-white/15 min-w-[160px]">
                   Our Story

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart, Heart, Menu, X, User, Search } from 'lucide-react'
@@ -43,7 +44,7 @@ export default function Navbar() {
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <span className="text-2xl" aria-hidden="true">🍯</span>
+            <Image src="/logo.webp" alt="Golden Honey" width={40} height={40} className="object-contain" priority />
             <span className="font-heading font-bold text-lg text-onyx tracking-tight">
               GOLDEN <span className="text-gradient-honey">HONEY</span>
             </span>

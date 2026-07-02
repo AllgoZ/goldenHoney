@@ -3,14 +3,14 @@ import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ShoppingBag } from 'lucide-react'
 import { getAllOrders } from '@/lib/services/admin.service'
-import { updateOrderStatus } from '@/lib/services/order.service'
+import { updateOrderStatus, updatePaymentStatus } from '@/lib/services/order.service'
 import PageHeader from '@/components/admin/PageHeader'
 import DataTable from '@/components/admin/DataTable'
 import StatusBadge from '@/components/admin/StatusBadge'
 import SearchInput from '@/components/admin/SearchInput'
 import EmptyState from '@/components/admin/EmptyState'
 import { formatINR } from '@/lib/utils'
-import type { FSOrder, OrderStatus } from '@/types/firebase'
+import type { FSOrder, OrderStatus, PaymentStatus } from '@/types/firebase'
 
 const ORDER_STATUSES = ['all','pending','paid','processing','shipped','delivered','cancelled','refunded']
 
@@ -40,6 +40,11 @@ export default function AdminOrdersPage() {
 
   async function handleStatus(orderId: string, status: OrderStatus) {
     await updateOrderStatus(orderId, status)
+    load()
+  }
+
+  async function handlePayment(orderId: string, status: PaymentStatus) {
+    await updatePaymentStatus(orderId, status)
     load()
   }
 
@@ -86,18 +91,26 @@ export default function AdminOrdersPage() {
               render: (row) => <StatusBadge status={(row as FSOrder).orderStatus} /> },
             { key: 'paymentStatus', label: 'Payment', width: '90px',
               render: (row) => <StatusBadge status={(row as FSOrder).paymentStatus} /> },
-            { key: 'actions', label: 'Update', width: '150px',
+            { key: 'actions', label: 'Update', width: '180px',
               render: (row) => {
                 const o = row as FSOrder
                 return (
-                  <select value={o.orderStatus}
-                    onChange={(e) => handleStatus(o.id, e.target.value as OrderStatus)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-xs border border-onyx/10 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-honey capitalize">
-                    {['pending','paid','processing','shipped','delivered','cancelled','refunded'].map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
+                  <div className="flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    <select value={o.orderStatus}
+                      onChange={(e) => handleStatus(o.id, e.target.value as OrderStatus)}
+                      className="text-xs border border-onyx/10 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-honey capitalize">
+                      {(['pending','processing','shipped','delivered','cancelled','refunded'] as OrderStatus[]).map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                    <select value={o.paymentStatus}
+                      onChange={(e) => handlePayment(o.id, e.target.value as PaymentStatus)}
+                      className="text-xs border border-onyx/10 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-honey capitalize">
+                      {(['pending','paid','failed','refunded'] as PaymentStatus[]).map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
                 )
               }
             },

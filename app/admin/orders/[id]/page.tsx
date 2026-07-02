@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { getOrder, updateOrderStatus, setTrackingNumber } from '@/lib/services/order.service'
+import { getOrder, updateOrderStatus, updatePaymentStatus, setTrackingNumber } from '@/lib/services/order.service'
 import StatusBadge from '@/components/admin/StatusBadge'
 import { formatINR } from '@/lib/utils'
-import type { FSOrder, OrderStatus } from '@/types/firebase'
+import type { FSOrder, OrderStatus, PaymentStatus } from '@/types/firebase'
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -31,11 +31,28 @@ export default function OrderDetailPage() {
     setOrder((o) => o ? { ...o, orderStatus: status } : null)
   }
 
+  async function handlePaymentStatusChange(status: PaymentStatus) {
+    if (!order) return
+    await updatePaymentStatus(order.id, status)
+    setOrder((o) => o ? { ...o, paymentStatus: status } : null)
+  }
+
   async function handleTrackingSave() {
     if (!order) return
     setSaving(true)
     await setTrackingNumber(order.id, tracking)
-    setOrder((o) => o ? { ...o, trackingNumber: tracking, orderStatus: 'shipped' } : null)
+    const updated = { ...order, trackingNumber: tracking, orderStatus: 'shipped' as const }
+    setOrder(updated)
+
+    // Fire shipping email to customer — non-blocking
+    if (order.userEmail) {
+      fetch('/api/email/shipping-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: updated, trackingNumber: tracking }),
+      }).catch(() => {})
+    }
+
     setSaving(false)
   }
 
@@ -58,14 +75,31 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      {/* Status control */}
+      {/* Order status control */}
       <div className="bg-white rounded-card border border-black/6 p-5">
-        <h3 className="font-semibold text-onyx text-sm mb-3">Update Status</h3>
+        <h3 className="font-semibold text-onyx text-sm mb-3">Order Status</h3>
         <div className="flex flex-wrap gap-2">
-          {(['pending','paid','processing','shipped','delivered','cancelled','refunded'] as OrderStatus[]).map((s) => (
+          {(['pending','processing','shipped','delivered','cancelled','refunded'] as OrderStatus[]).map((s) => (
             <button key={s} onClick={() => handleStatusChange(s)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors capitalize ${
                 order.orderStatus === s
+                  ? 'bg-onyx text-white border-onyx'
+                  : 'border-onyx/10 text-onyx/60 hover:border-onyx/30'
+              }`}>
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Payment status control */}
+      <div className="bg-white rounded-card border border-black/6 p-5">
+        <h3 className="font-semibold text-onyx text-sm mb-3">Payment Status</h3>
+        <div className="flex flex-wrap gap-2">
+          {(['pending','paid','failed','refunded'] as PaymentStatus[]).map((s) => (
+            <button key={s} onClick={() => handlePaymentStatusChange(s)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors capitalize ${
+                order.paymentStatus === s
                   ? 'bg-onyx text-white border-onyx'
                   : 'border-onyx/10 text-onyx/60 hover:border-onyx/30'
               }`}>

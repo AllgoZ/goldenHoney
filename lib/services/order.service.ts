@@ -13,7 +13,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import type { FSOrder, OrderStatus } from '@/types/firebase'
+import type { FSOrder, OrderStatus, PaymentStatus } from '@/types/firebase'
 
 const COL = 'orders'
 
@@ -74,6 +74,11 @@ export async function getUserOrders(userId: string, count = 20): Promise<FSOrder
 /* ── Update order status ─────────────────────────────────── */
 export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
   await updateDoc(doc(db, COL, orderId), { orderStatus: status, updatedAt: serverTimestamp() })
+}
+
+/* ── Update payment status (admin manual override) ──────── */
+export async function updatePaymentStatus(orderId: string, status: PaymentStatus): Promise<void> {
+  await updateDoc(doc(db, COL, orderId), { paymentStatus: status, updatedAt: serverTimestamp() })
 }
 
 /* ── Update payment status after Razorpay callback ──────── */

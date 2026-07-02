@@ -84,10 +84,13 @@ service cloud.firestore {
     }
 
     // ── coupons ───────────────────────────────────────────────
-    // Signed-in users can read (to validate). Only admins can write.
+    // Public read — codes aren't sensitive, need validation without Auth.
+    // Anyone can increment usedCount (redeem). Only admins can create/delete/edit fields.
     match /coupons/{code} {
-      allow read:   if isSignedIn();
-      allow write:  if hasAdminPermission('manageCoupons');
+      allow read:   if true;
+      allow update: if (isSuperAdmin() || hasAdminPermission('manageCoupons'))
+                    || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedCount']);
+      allow create, delete: if isSuperAdmin() || hasAdminPermission('manageCoupons');
     }
 
 
