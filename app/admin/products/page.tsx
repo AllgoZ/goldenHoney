@@ -51,12 +51,12 @@ export default function AdminProductsPage() {
     <div>
       <PageHeader title="Products" description={`${products.length} total`} actionLabel="Add Product" actionHref="/admin/products/new" />
 
-      <div className="flex flex-wrap gap-3 mb-4">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search products…" className="w-60" />
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search products…" className="w-full sm:w-60" />
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="h-9 px-3 text-sm border border-onyx/10 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-honey/50"
+          className="h-9 px-3 text-sm border border-onyx/10 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-honey/50 w-full sm:w-auto"
         >
           <option value="all">All status</option>
           <option value="active">Active</option>

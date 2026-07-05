@@ -52,10 +52,10 @@ export default function AdminOrdersPage() {
     <div>
       <PageHeader title="Orders" description={`${orders.length} total`} />
 
-      <div className="flex flex-wrap gap-3 mb-4">
-        <SearchInput value={search} onChange={setSearch} placeholder="Order # or customer…" className="w-64" />
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <SearchInput value={search} onChange={setSearch} placeholder="Order # or customer…" className="w-full sm:w-64" />
         <select value={filter} onChange={(e) => setFilter(e.target.value)}
-          className="h-9 px-3 text-sm border border-onyx/10 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-honey/50 capitalize">
+          className="h-9 px-3 text-sm border border-onyx/10 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-honey/50 capitalize w-full sm:w-auto">
           {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s === 'all' ? 'All statuses' : s}</option>)}
         </select>
       </div>

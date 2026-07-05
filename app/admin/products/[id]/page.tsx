@@ -100,7 +100,7 @@ export default function EditProductPage() {
       <form onSubmit={handleSave} className="space-y-6">
         <div className="bg-white rounded-card border border-black/6 p-5 space-y-4">
           <h3 className="font-semibold text-onyx text-sm">Basic Information</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-onyx/50 mb-1.5">Product Name *</label>
               <input value={name} onChange={(e) => setName(e.target.value)}
@@ -126,7 +126,7 @@ export default function EditProductPage() {
 
         <div className="bg-white rounded-card border border-black/6 p-5">
           <h3 className="font-semibold text-onyx text-sm mb-4">Classification</h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-onyx/50 mb-1.5">Category</label>
               <select value={category} onChange={(e) => setCategory(e.target.value)}
@@ -170,7 +170,7 @@ export default function EditProductPage() {
           </div>
           <div className="space-y-3">
             {weights.map((w, i) => (
-              <div key={i} className="grid grid-cols-5 gap-3 items-center">
+              <div key={i} className="grid grid-cols-2 sm:grid-cols-5 gap-3 items-center">
                 <input value={w.label} onChange={(e) => updateWeight(i, 'label', e.target.value)}
                   placeholder="250g" className="h-9 px-3 text-sm border border-onyx/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-honey/50 bg-white" />
                 <input type="number" value={w.price || ''} onChange={(e) => updateWeight(i, 'price', Number(e.target.value))}
@@ -180,7 +180,7 @@ export default function EditProductPage() {
                 <input type="number" value={w.stock || ''} onChange={(e) => updateWeight(i, 'stock', Number(e.target.value))}
                   placeholder="Stock" className="h-9 px-3 text-sm border border-onyx/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-honey/50 bg-white" />
                 <button type="button" onClick={() => removeWeight(i)} disabled={weights.length === 1}
-                  className="w-9 h-9 rounded-xl border border-onyx/10 flex items-center justify-center text-onyx/30 hover:text-red-500 hover:border-red-200 transition-colors disabled:opacity-30">
+                  className="col-span-2 sm:col-span-1 w-9 h-9 rounded-xl border border-onyx/10 flex items-center justify-center text-onyx/30 hover:text-red-500 hover:border-red-200 transition-colors disabled:opacity-30">
                   <Trash2 size={13} />
                 </button>
               </div>

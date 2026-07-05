@@ -43,7 +43,7 @@ export default function AdminCustomersPage() {
           value={search}
           onChange={setSearch}
           placeholder="Search by name, phone, or email…"
-          className="w-80"
+          className="w-full sm:w-80"
         />
       </div>
 
