@@ -6,10 +6,11 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 
 const CONTACT_INFO = [
-  { icon: <Mail size={20} />,  label: 'Email',   value: 'hello@goldenhoney.in',  sub: 'We reply within 4 hours' },
-  { icon: <Phone size={20} />, label: 'Phone',   value: '+91 98765 43210',        sub: 'Mon–Sat, 9 AM – 6 PM' },
+  { icon: <Mail size={20} />,  label: 'Email',   value: 'kodaigoldenhoney@gmail.com', sub: 'We reply within 4 hours' },
+  { icon: <Phone size={20} />, label: 'Phone',   value: '+91 91595 43104',             sub: 'Mon–Sat, 9 AM – 6 PM IST' },
   { icon: <Clock size={20} />, label: 'Hours',   value: 'Mon – Sat, 9 AM – 6 PM IST', sub: 'Closed Sundays & public holidays' },
-  { icon: <MapPin size={20} />,label: 'Address', value: '14, Neem Tree Lane, Koramangala', sub: 'Bengaluru, Karnataka 560095' },
+  { icon: <MapPin size={20} />,label: 'Address', value: 'Oddanchatram, Dindigul – 624 619', sub: '' },
+  { icon: <MapPin size={20} />,label: 'Store',   value: 'Malabar Bakes, near NH83',   sub: 'Periyakarattupatti, Oddanchatram – 624 614' },
 ]
 
 export default function ContactPage() {

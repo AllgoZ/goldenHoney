@@ -106,7 +106,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/40">
-          <p>© {new Date().getFullYear()} GOLDEN HONEY. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} GOLDEN HONEY. All Rights Reserved by <span className="text-white/60">ALLGOZ TECH</span>.</p>
           <div className="flex gap-4">
             {LEGAL_LINKS.map((l) => (
               <Link key={l.href} href={l.href} className="hover:text-white/70 transition-colors">
