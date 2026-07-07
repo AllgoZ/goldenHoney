@@ -1,16 +1,16 @@
 # PHASE 3: Live Firestore Integration — Progress
 
-> **Status**: Production-Ready Core (90% Complete)
+> **Status**: Production-Ready Core (95% Complete)
 > **Started**: 2026-06-20
-> **Last Updated**: 2026-07-05
-> **Last Milestone**: Payments + Email + Products + UI Polish ✅
+> **Last Updated**: 2026-07-07
+> **Last Milestone**: Admin Polish + Bug Fixes ✅
 
 ---
 
 ## Progress Summary
 
 ```
-█████████████████████░  90% Complete
+██████████████████████░  95% Complete
 ```
 
 | Tier | Tasks | Completed | Status |
@@ -20,6 +20,7 @@
 | **Tier 2B** | Phone Auth, Customers, Orders | 3/3 | ✅ DONE |
 | **Tier 3** | Payments, Email, Coupons | 3/3 | ✅ DONE |
 | **Tier 4** | UI Polish, Content, Products | 4/4 | ✅ DONE |
+| **Tier 4B** | Admin Polish, Bug Fixes | 4/4 | ✅ DONE |
 | **Tier 5** | Wishlist sync, Reviews | 0/2 | 🔴 PENDING |
 | **Tier 6** | Testing, Error Handling, Deploy | 0/3 | 🔴 PENDING |
 
@@ -96,10 +97,33 @@
 
 ### Site-Wide UI ✅
 - ✅ Navbar — 🍯 emoji replaced with `logo.webp` image
-- ✅ Footer — real contact: +91 9159543104, tomoshiva@gmail.com, two Oddanchatram addresses
+- ✅ Footer — real contact: +91 91595 43104, tomoshiva@gmail.com, two Oddanchatram addresses
+- ✅ Footer — copyright updated to "All Rights Reserved by ALLGOZ TECH"
+- ✅ Contact page — real phone, email (kodaigoldenhoney@gmail.com), hours, both addresses
 - ✅ WhatsApp floating button — mobile only (bottom-right corner)
 - ✅ Shop Now hero button — pulsing honey-gold glow animation (Framer Motion)
 - ✅ Home page desktop hero — `wildhoney.webp` on mobile, original on desktop
+
+---
+
+## Tier 4B: Admin Polish & Bug Fixes ✅ COMPLETE
+
+### Mobile Responsiveness ✅
+- ✅ All admin list pages mobile-responsive (products, orders, customers)
+- ✅ Product create/edit forms stack to single column on mobile (`grid-cols-1 sm:grid-cols-N`)
+- ✅ Delete button in weight options spans full width on mobile (`col-span-2 sm:col-span-1`)
+
+### Admin Settings ✅
+- ✅ Change admin login email — requires current password (Firebase re-authentication)
+- ✅ Change admin login password — requires current password
+- ✅ Current email displayed read-only, auto-fetched from Firebase Auth
+
+### Bug Fixes ✅
+- ✅ Product save failure — Firestore `updateDoc` throws on `undefined` field values
+  - Fixed: optional fields (`badge`, `seoTitle`, `seoDescription`) now conditionally included
+  - Fixed: `oldPrice: ''` (empty string) stripped before Firestore write
+  - Fixed: `Math.min` on empty weights array guarded with fallback `0`
+- ✅ Same fix applied to new product creation page
 
 ---
 
@@ -170,6 +194,11 @@
 ✅ ProductCard quantity stepper + stock UI
 ✅ Bilingual about page
 ✅ Site UI polish (logo, footer, WhatsApp, glow CTA)
+✅ Admin panel mobile-responsive
+✅ Admin settings: change email/password
+✅ Contact page with real business info
+✅ Footer: ALLGOZ TECH copyright
+✅ Product save bug fix (undefined Firestore values)
 
 🔴 Wishlist Firestore sync
 🔴 Reviews
@@ -178,8 +207,8 @@
 🔴 E2E testing
 ```
 
-**Overall: ~90% complete — core commerce flows fully functional**
+**Overall: ~95% complete — core commerce flows fully functional, admin fully polished**
 
 ---
 
-**Last updated**: 2026-07-05
+**Last updated**: 2026-07-07

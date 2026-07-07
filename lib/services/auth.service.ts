@@ -6,6 +6,10 @@ import {
   signInWithPopup,
   sendPasswordResetEmail,
   updateProfile,
+  updateEmail,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
   onAuthStateChanged,
   type User as FirebaseUser,
 } from 'firebase/auth'
@@ -80,4 +84,20 @@ export function onAuthChange(callback: (user: FirebaseUser | null) => void) {
 /* ── Current User ────────────────────────────────────────── */
 export function getCurrentUser(): FirebaseUser | null {
   return auth.currentUser
+}
+
+/* ── Update Admin Credentials ────────────────────────────── */
+export async function updateAdminCredentials(
+  currentPassword: string,
+  newEmail?: string,
+  newPassword?: string,
+): Promise<void> {
+  const user = auth.currentUser
+  if (!user || !user.email) throw new Error('Not signed in')
+
+  const credential = EmailAuthProvider.credential(user.email, currentPassword)
+  await reauthenticateWithCredential(user, credential)
+
+  if (newEmail && newEmail !== user.email) await updateEmail(user, newEmail)
+  if (newPassword) await updatePassword(user, newPassword)
 }

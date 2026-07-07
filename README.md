@@ -2,7 +2,7 @@
 
 Premium e-commerce platform for wild honey and handcrafted wooden toys, sourced from indigenous tribal communities in Kodaikanal by founder **Sivakumar**.
 
-**Live repo**: https://github.com/Nagul232/goldenhoney
+**Live repo**: https://github.com/AllgoZ/goldenHoney
 
 ---
 
@@ -131,6 +131,8 @@ Open [http://localhost:3000](http://localhost:3000)
 - **Products** — Create/edit/delete with Cloudinary image upload, weight options, stock per variant
 - **Orders** — List + detail view, order status, payment status, tracking number (auto-marks shipped)
 - **Customers** — Profile, order history, saved addresses, live cart
+- **Settings** — Store settings (name, shipping, tax) + change admin login email/password
+- **Mobile-responsive** — All admin pages work on phones and tablets
 
 ### Email (Resend)
 - **Admin notification** — Full order details sent to admin on every order
@@ -139,6 +141,8 @@ Open [http://localhost:3000](http://localhost:3000)
 ### Content
 - **About page** — Bilingual (English + Tamil) "Why Choose Golden Honey" feature cards
 - **Branded story** — Sivakumar's story sourcing from Kodaikanal tribal communities
+- **Contact page** — Real business phone, email, and both Oddanchatram addresses
+- **Footer** — Real contact info + ALLGOZ TECH copyright
 
 ---
 

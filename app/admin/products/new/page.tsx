@@ -64,26 +64,35 @@ export default function NewProductPage() {
     setSaving(true)
     setError('')
     try {
-      await createProduct({
+      const sanitizedWeights = weights.map((w) => {
+        const opt: FSWeightOption = { label: w.label, price: w.price, stock: w.stock, sku: w.sku }
+        if (w.oldPrice !== '' && w.oldPrice !== undefined) opt.oldPrice = Number(w.oldPrice)
+        return opt
+      })
+
+      const data: Parameters<typeof createProduct>[0] = {
         name, slug,
         shortDescription: shortDesc,
         description:      desc,
         categoryId:       category,
         categorySlug:     category,
-        weightOptions:    weights,
-        price:            Math.min(...weights.map((w) => w.price)),
+        weightOptions:    sanitizedWeights,
+        price:            sanitizedWeights.length ? Math.min(...sanitizedWeights.map((w) => w.price)) : 0,
         images,
-        badge:            badge || undefined,
         featured,
         bestSeller,
         status,
         rating:      0,
         reviewCount: 0,
-        seoTitle:    seoTitle || undefined,
-        seoDescription: seoDesc || undefined,
-      })
+      }
+      if (badge)    data.badge          = badge
+      if (seoTitle) data.seoTitle       = seoTitle
+      if (seoDesc)  data.seoDescription = seoDesc
+
+      await createProduct(data)
       router.push('/admin/products')
-    } catch {
+    } catch (err) {
+      console.error('Product save error:', err)
       setError('Failed to save product. Please try again.')
     } finally {
       setSaving(false)

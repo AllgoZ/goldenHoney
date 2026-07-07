@@ -62,22 +62,33 @@ export default function EditProductPage() {
     e.preventDefault()
     setSaving(true); setError('')
     try {
-      await updateProduct(id, {
+      // Strip empty-string oldPrice values — Firestore rejects non-numeric values in numeric fields
+      const sanitizedWeights = weights.map((w) => {
+        const opt: FSWeightOption = { label: w.label, price: w.price, stock: w.stock, sku: w.sku }
+        if (w.oldPrice !== '' && w.oldPrice !== undefined) opt.oldPrice = Number(w.oldPrice)
+        return opt
+      })
+
+      // Build update object without undefined values — Firestore updateDoc throws on undefined
+      const updates: Partial<FSProduct> = {
         name, slug,
         shortDescription: shortDesc,
         description:      desc,
         categoryId:       category,
         categorySlug:     category,
-        weightOptions:    weights,
-        price:            Math.min(...weights.map((w) => w.price)),
+        weightOptions:    sanitizedWeights,
+        price:            sanitizedWeights.length ? Math.min(...sanitizedWeights.map((w) => w.price)) : 0,
         images,
-        badge:            badge || undefined,
         featured, bestSeller, status,
-        seoTitle:       seoTitle || undefined,
-        seoDescription: seoDesc || undefined,
-      } as Partial<FSProduct>)
+      }
+      if (badge)    updates.badge          = badge
+      if (seoTitle) updates.seoTitle       = seoTitle
+      if (seoDesc)  updates.seoDescription = seoDesc
+
+      await updateProduct(id, updates)
       router.push('/admin/products')
-    } catch {
+    } catch (err) {
+      console.error('Product save error:', err)
       setError('Failed to save. Please try again.')
     } finally {
       setSaving(false)
