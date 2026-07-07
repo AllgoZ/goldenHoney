@@ -66,7 +66,7 @@ export default function NewProductPage() {
     try {
       const sanitizedWeights = weights.map((w) => {
         const opt: FSWeightOption = { label: w.label, price: w.price, stock: w.stock, sku: w.sku }
-        if (w.oldPrice !== '' && w.oldPrice !== undefined) opt.oldPrice = Number(w.oldPrice)
+        if (w.oldPrice !== undefined) opt.oldPrice = w.oldPrice
         return opt
       })
 
