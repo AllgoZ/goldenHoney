@@ -270,12 +270,12 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
               <div className="flex gap-2">
                 {isInCart ? (
                   /* Inline quantity stepper */
-                  <div className="flex-1 flex items-center h-9 rounded-xl border-2 border-honey bg-honey/5 overflow-hidden">
+                  <div className="flex-1 flex items-center h-9 rounded-xl border-2 border-honey bg-honey/5">
                     <button
                       onClick={handleDecrement}
-                      className="h-full px-3 text-onyx hover:bg-honey/30 transition-[background-color] duration-150 flex items-center justify-center"
+                      className="w-8 h-full flex-shrink-0 text-onyx hover:bg-honey/30 transition-[background-color] duration-150 flex items-center justify-center rounded-l-[10px]"
                     >
-                      <Minus size={13} />
+                      <Minus size={12} />
                     </button>
                     <span className="flex-1 text-center text-sm font-bold text-onyx tabular-nums">
                       {cartQty}
@@ -283,9 +283,9 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                     <button
                       onClick={handleIncrement}
                       disabled={cartQty >= maxQty}
-                      className="h-full px-3 text-onyx hover:bg-honey/30 transition-[background-color] duration-150 flex items-center justify-center disabled:opacity-30"
+                      className="w-8 h-full flex-shrink-0 text-onyx hover:bg-honey/30 transition-[background-color] duration-150 flex items-center justify-center rounded-r-[10px] disabled:opacity-30"
                     >
-                      <Plus size={13} />
+                      <Plus size={12} />
                     </button>
                   </div>
                 ) : (

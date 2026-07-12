@@ -1,15 +1,19 @@
 'use client'
 import { Suspense, useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { SlidersHorizontal, Search, X } from 'lucide-react'
+import { SlidersHorizontal, Search, X, ShoppingCart, ArrowRight } from 'lucide-react'
 import ProductCard from '@/components/product/ProductCard'
 import { getProducts } from '@/lib/services/product.service'
 import { getCategories } from '@/lib/services/category.service'
+import { useCart } from '@/hooks/useCart'
+import { formatINR } from '@/lib/utils'
 import type { FSProduct, FSCategory } from '@/types/firebase'
 
 function ShopContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [products, setProducts] = useState<FSProduct[]>([])
   const [categories, setCategories] = useState<FSCategory[]>([])
   const [loading, setLoading] = useState(true)
@@ -17,6 +21,10 @@ function ShopContent() {
   const [activeCat, setActiveCat] = useState(searchParams.get('cat') ?? 'all')
   const [sortBy, setSortBy] = useState<'default' | 'price-asc' | 'price-desc' | 'rating'>('default')
   const [search, setSearch] = useState('')
+
+  const { items } = useCart()
+  const cartCount = items.reduce((s, i) => s + i.quantity, 0)
+  const cartTotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0)
 
   useEffect(() => {
     async function loadData() {
@@ -81,7 +89,7 @@ function ShopContent() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search honey, wooden toys…"
-            className="w-full h-11 pl-10 pr-10 text-sm bg-white border border-onyx/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-honey/50 text-onyx placeholder:text-onyx/30"
+            className="w-full h-12 pl-10 pr-10 text-sm font-medium bg-white border-2 border-onyx/15 rounded-xl focus:outline-none focus:ring-2 focus:ring-honey/60 focus:border-honey text-onyx placeholder:text-onyx/35 placeholder:font-normal"
           />
           {search && (
             <button
@@ -189,6 +197,37 @@ function ShopContent() {
           )}
         </>
       )}
+
+      {/* Floating cart bar — slides up when cart has items */}
+      <AnimatePresence>
+        {cartCount > 0 && (
+          <motion.div
+            initial={{ y: 120 }}
+            animate={{ y: 0 }}
+            exit={{ y: 120 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+            className="fixed bottom-4 left-4 right-4 z-50 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[420px]"
+          >
+            <div className="bg-onyx text-white rounded-2xl shadow-2xl shadow-onyx/30 flex items-center gap-3 px-4 py-3">
+              <div className="w-10 h-10 rounded-xl bg-honey flex items-center justify-center flex-shrink-0">
+                <ShoppingCart size={18} className="text-onyx" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold leading-tight">
+                  {cartCount} item{cartCount !== 1 ? 's' : ''} in cart
+                </p>
+                <p className="text-xs text-white/50">{formatINR(cartTotal)}</p>
+              </div>
+              <button
+                onClick={() => router.push('/cart')}
+                className="h-10 px-4 rounded-xl bg-honey text-onyx text-sm font-bold flex items-center gap-1.5 hover:bg-honey-dark transition-[background-color] duration-150 flex-shrink-0"
+              >
+                Go to Cart <ArrowRight size={14} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
