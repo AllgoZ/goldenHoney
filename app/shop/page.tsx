@@ -2,7 +2,7 @@
 import { Suspense, useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal, Search, X } from 'lucide-react'
 import ProductCard from '@/components/product/ProductCard'
 import { getProducts } from '@/lib/services/product.service'
 import { getCategories } from '@/lib/services/category.service'
@@ -16,6 +16,7 @@ function ShopContent() {
   const [error, setError] = useState<string | null>(null)
   const [activeCat, setActiveCat] = useState(searchParams.get('cat') ?? 'all')
   const [sortBy, setSortBy] = useState<'default' | 'price-asc' | 'price-desc' | 'rating'>('default')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     async function loadData() {
@@ -43,19 +44,56 @@ function ShopContent() {
       ? products
       : products.filter((p) => p.categorySlug === activeCat)
 
+    if (search) {
+      const q = search.toLowerCase()
+      list = list.filter((p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.shortDescription ?? '').toLowerCase().includes(q) ||
+        p.categorySlug.toLowerCase().includes(q)
+      )
+    }
+
     if (sortBy === 'price-asc')  list = [...list].sort((a, b) => a.price - b.price)
     if (sortBy === 'price-desc') list = [...list].sort((a, b) => b.price - a.price)
     if (sortBy === 'rating')     list = [...list].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
 
     return list
-  }, [products, activeCat, sortBy])
+  }, [products, activeCat, sortBy, search])
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="mb-10">
+      <div className="mb-8">
         <h1 className="font-heading font-bold text-4xl text-onyx mb-2">Our Products</h1>
-        {!loading && <p className="text-onyx/50">{filtered.length} products</p>}
+        {!loading && (
+          <p className="text-onyx/50">
+            {filtered.length} product{filtered.length !== 1 ? 's' : ''}
+            {search ? ` for "${search}"` : ''}
+          </p>
+        )}
       </div>
+
+      {/* Search bar */}
+      {!loading && (
+        <div className="relative mb-6">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-onyx/30 pointer-events-none" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search honey, wooden toys…"
+            className="w-full h-11 pl-10 pr-10 text-sm bg-white border border-onyx/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-honey/50 text-onyx placeholder:text-onyx/30"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-onyx/30 hover:text-onyx/60 transition-colors"
+            >
+              <X size={15} />
+            </button>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-card mb-8">
@@ -115,7 +153,7 @@ function ShopContent() {
 
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeCat + sortBy}
+              key={activeCat + sortBy + search}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -139,7 +177,14 @@ function ShopContent() {
           {filtered.length === 0 && (
             <div className="text-center py-20 text-onyx/40">
               <p className="text-5xl mb-4">🍯</p>
-              <p className="text-lg font-medium">No products found</p>
+              <p className="text-lg font-medium">
+                {search ? `No products found for "${search}"` : 'No products found'}
+              </p>
+              {search && (
+                <button onClick={() => setSearch('')} className="mt-3 text-sm text-honey-dark hover:underline">
+                  Clear search
+                </button>
+              )}
             </div>
           )}
         </>

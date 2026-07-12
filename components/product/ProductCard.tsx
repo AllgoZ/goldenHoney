@@ -10,7 +10,6 @@ import { formatINR, discountPct } from '@/lib/utils'
 import { useCart } from '@/hooks/useCart'
 import { useWishlist } from '@/hooks/useWishlist'
 import { useAuthGate } from '@/hooks/useAuthGate'
-import StarRating from '@/components/ui/StarRating'
 import Badge from '@/components/ui/Badge'
 
 interface ProductCardProps {
@@ -160,7 +159,6 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
             <h3 className="font-heading font-semibold text-onyx text-sm leading-tight mb-2 line-clamp-2">
               {product.name}
             </h3>
-            <StarRating rating={product.rating} size="sm" showCount count={product.reviewCount} />
 
             {/* Price row — pushed to bottom */}
             <div className="flex items-baseline gap-2 mb-1 mt-auto">
@@ -267,7 +265,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
               )}
             </AnimatePresence>
 
-            {/* Add / Buy buttons */}
+            {/* Add / Buy / Go to Cart buttons */}
             {!pickerOpen && (
               <div className="flex gap-2">
                 {isInCart ? (
@@ -299,13 +297,23 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                     <ShoppingCart size={12} /> {isOutOfStock ? 'Out of Stock' : 'Add'}
                   </button>
                 )}
-                <button
-                  onClick={handleBuy}
-                  disabled={isOutOfStock}
-                  className="flex-1 h-9 rounded-xl text-xs font-semibold bg-onyx text-white hover:bg-onyx/80 transition-[background-color] duration-150 ease-out flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Zap size={12} /> Buy
-                </button>
+                {isInCart ? (
+                  /* Go to Cart — shown after item is added */
+                  <button
+                    onClick={(e) => { e.preventDefault(); router.push('/cart') }}
+                    className="flex-1 h-9 rounded-xl text-xs font-semibold bg-onyx text-white hover:bg-onyx/80 transition-[background-color] duration-150 ease-out flex items-center justify-center gap-1"
+                  >
+                    <ShoppingCart size={12} /> Cart
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleBuy}
+                    disabled={isOutOfStock}
+                    className="flex-1 h-9 rounded-xl text-xs font-semibold bg-onyx text-white hover:bg-onyx/80 transition-[background-color] duration-150 ease-out flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Zap size={12} /> Buy
+                  </button>
+                )}
               </div>
             )}
           </div>
