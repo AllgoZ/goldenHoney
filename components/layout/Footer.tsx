@@ -90,7 +90,7 @@ export default function Footer() {
               Contact
             </h3>
             <address className="not-italic text-sm space-y-2.5">
-              <p>📧 tomoshiva@gmail.com</p>
+              <p>📧 kodaigoldenhoney@gmail.com</p>
               <p>📞 +91 91595 43104</p>
               <p>⏰ Mon–Sat, 9 AM – 6 PM IST</p>
               <p className="pt-1 leading-relaxed text-white/50">
