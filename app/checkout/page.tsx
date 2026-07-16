@@ -77,9 +77,6 @@ export default function CheckoutPage() {
   const [couponError,     setCouponError]     = useState('')
   const [couponLoading,   setCouponLoading]   = useState(false)
 
-  /* ── Payment method ──────────────────────────────────────── */
-  const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'cod'>('razorpay')
-
   /* ── UI state ─────────────────────────────────────────────── */
   const [loading, setLoading] = useState(false)
   const [errors,  setErrors]  = useState<Record<string, string>>({})
@@ -226,25 +223,7 @@ export default function CheckoutPage() {
         shippingAddress,
       }
 
-      if (paymentMethod === 'cod') {
-        /* ── Cash on Delivery ──────────────────────────────── */
-        const order = await createOrderForCustomer(user!.id, {
-          ...baseData,
-          paymentMethod: 'cod',
-          paymentStatus: 'pending',
-          orderStatus:   'pending',
-        })
-
-        fetch('/api/email/order-placed', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(order),
-        }).catch(() => {})
-
-        if (appliedCoupon) redeemCoupon(appliedCoupon.code).catch(() => {})
-        clearCart()
-        router.push(`/order-success?id=${order.id}&n=${order.orderNumber}`)
-      } else {
+      {
         /* ── Online payment via Razorpay ───────────────────── */
         const loaded = await loadRazorpayScript()
         if (!loaded) throw new Error('Could not load payment gateway. Please try again.')
@@ -314,7 +293,6 @@ export default function CheckoutPage() {
           rzp.open()
         })
       }
-
     } catch (err) {
       if (err instanceof Error && err.message !== 'rzp_dismissed') {
         console.error('Order failed:', err)
@@ -510,31 +488,15 @@ export default function CheckoutPage() {
             {/* Payment */}
             <div className="bg-white rounded-xl p-6 border border-black/5 shadow-sm">
               <h2 className="font-heading font-semibold text-base text-onyx mb-4">Payment Method</h2>
-              <div className="space-y-3">
-                {/* Razorpay */}
-                <button type="button" onClick={() => setPaymentMethod('razorpay')}
-                  className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-[border-color,background-color] duration-150 text-left ${paymentMethod === 'razorpay' ? 'border-honey bg-honey/5' : 'border-black/8 hover:border-black/20'}`}>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${paymentMethod === 'razorpay' ? 'border-honey' : 'border-black/20'}`}>
-                    {paymentMethod === 'razorpay' && <div className="w-2 h-2 rounded-full bg-honey" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm text-onyx">Pay Online</p>
-                    <p className="text-xs text-onyx/40 mt-0.5">UPI · Credit / Debit Card · Net Banking · Wallets</p>
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 px-2 py-0.5 rounded-chip">Razorpay</span>
-                </button>
-                {/* COD */}
-                <button type="button" onClick={() => setPaymentMethod('cod')}
-                  className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-[border-color,background-color] duration-150 text-left ${paymentMethod === 'cod' ? 'border-honey bg-honey/5' : 'border-black/8 hover:border-black/20'}`}>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${paymentMethod === 'cod' ? 'border-honey' : 'border-black/20'}`}>
-                    {paymentMethod === 'cod' && <div className="w-2 h-2 rounded-full bg-honey" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm text-onyx">Cash on Delivery</p>
-                    <p className="text-xs text-onyx/40 mt-0.5">Pay when your order arrives</p>
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wide bg-green-50 text-green-700 px-2 py-0.5 rounded-chip">COD</span>
-                </button>
+              <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-honey bg-honey/5">
+                <div className="w-4 h-4 rounded-full border-2 border-honey flex items-center justify-center shrink-0">
+                  <div className="w-2 h-2 rounded-full bg-honey" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-sm text-onyx">Pay Online</p>
+                  <p className="text-xs text-onyx/40 mt-0.5">UPI · Credit / Debit Card · Net Banking · Wallets</p>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 px-2 py-0.5 rounded-chip">Razorpay</span>
               </div>
             </div>
           </div>
@@ -630,7 +592,7 @@ export default function CheckoutPage() {
                 onClick={handleOrder}
                 disabled={!user?.isLoggedIn || items.length === 0}
               >
-                {paymentMethod === 'cod' ? 'Place Order' : 'Pay Now'}
+                Pay Now
               </Button>
 
               {!user?.isLoggedIn && (
