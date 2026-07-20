@@ -69,7 +69,7 @@ function ShopContent() {
   }, [products, activeCat, sortBy, search])
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${cartCount > 0 ? 'pb-24 sm:pb-0' : ''}`}>
       <div className="mb-8">
         <h1 className="font-heading font-bold text-4xl text-onyx mb-2">Our Products</h1>
         {!loading && (
@@ -206,7 +206,7 @@ function ShopContent() {
             animate={{ y: 0 }}
             exit={{ y: 120 }}
             transition={{ type: 'spring', stiffness: 420, damping: 36 }}
-            className="fixed bottom-4 left-4 right-4 z-50 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[420px]"
+            className="fixed bottom-20 left-4 right-4 z-50 sm:bottom-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[420px]"
           >
             <div className="bg-onyx text-white rounded-2xl shadow-2xl shadow-onyx/30 flex items-center gap-3 px-4 py-3">
               <div className="w-10 h-10 rounded-xl bg-honey flex items-center justify-center flex-shrink-0">
