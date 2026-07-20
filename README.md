@@ -1,8 +1,9 @@
 # 🍯 GOLDEN HONEY — E-Commerce Site
 
-Premium e-commerce platform for wild honey and handcrafted wooden toys, sourced from indigenous tribal communities in Kodaikanal by founder **Sivakumar**.
+Premium e-commerce platform for wild honey and handcrafted wooden toys, sourced from indigenous tribal communities in Kodaikanal by founder **SIVAKUMAR** (proprietor, ALLGOZ TECH).
 
 **Live repo**: https://github.com/AllgoZ/goldenHoney
+**Contact**: kodaigoldenhoney@gmail.com · +91 91595 43104
 
 ---
 
@@ -16,9 +17,9 @@ Premium e-commerce platform for wild honey and handcrafted wooden toys, sourced 
 | Animation | Framer Motion |
 | State | Zustand with persist middleware |
 | Database | Firebase Firestore |
-| Auth | Firebase Auth (admin) + Phone-as-ID (customers) |
+| Auth | Firebase Auth (admin panel) + Phone-as-ID (customers) |
 | Images | Cloudinary CDN |
-| Payments | Razorpay |
+| Payments | Razorpay (live keys, online only) |
 | Email | Resend (via direct REST API) |
 
 ---
@@ -27,37 +28,45 @@ Premium e-commerce platform for wild honey and handcrafted wooden toys, sourced 
 
 ```
 app/
-├── (shop)/            # Customer-facing pages
-│   ├── page.tsx       # Homepage with hero + bestsellers
-│   ├── shop/          # Product listing + filters
-│   ├── product/[slug] # Product detail
-│   ├── cart/          # Cart page
-│   ├── checkout/      # Checkout with Razorpay + COD
-│   ├── order-success/ # Post-payment confirmation
-│   ├── account/       # Customer account (orders, addresses, wishlist)
-│   ├── about/         # Our story + team + values
-│   └── contact/       # Contact page
-├── admin/             # Admin dashboard (Firebase Auth protected)
-│   ├── dashboard/
-│   ├── products/      # CRUD with Cloudinary image upload
-│   ├── orders/        # Order management + payment status + tracking
-│   └── customers/     # Customer profiles
-├── api/
-│   ├── email/         # Resend email routes
-│   ├── razorpay/      # Payment gateway routes
-│   └── upload/        # Cloudinary upload route
+├── page.tsx               # Homepage — hero + bestsellers from Firestore
+├── shop/                  # Product listing + search + category filters
+├── product/[slug]/        # Product detail page
+├── cart/                  # Cart page
+├── checkout/              # Checkout — Razorpay online payment only (no COD)
+├── order-success/         # Post-payment confirmation
+├── account/               # Customer account (orders, addresses, wishlist)
+├── about/                 # Our story + team + values
+├── contact/               # Contact page (real business info)
+└── admin/                 # Admin dashboard (Firebase Auth protected)
+    ├── products/          # CRUD with Cloudinary image upload
+    ├── orders/            # Order management + tracking
+    ├── customers/         # Customer profiles + order history
+    └── settings/          # Store settings + change admin email/password
 components/
-├── layout/            # Navbar, Footer
-├── product/           # ProductCard with quantity stepper
-├── admin/             # Admin-specific UI components
-└── ui/                # Shared UI: Button, Input, Badge, etc.
+├── layout/
+│   ├── Navbar.tsx
+│   ├── Footer.tsx
+│   ├── BottomNav.tsx      # Mobile-only fixed bottom nav (Home/Cart/Orders/Profile)
+│   └── ShopLayoutWrapper.tsx
+├── product/
+│   └── ProductCard.tsx    # Buy button → bottom sheet with Add + Buy Now
+├── admin/
+└── ui/
 lib/
-├── firebase.ts        # Firebase client init
-├── resend.ts          # Email via Resend REST API (IPv4-forced)
-└── services/          # Firestore service layer
-store/                 # Zustand stores: cart, wishlist, user, ui
+├── firebase.ts
+├── services/
+│   ├── product.service.ts
+│   ├── category.service.ts
+│   ├── order.service.ts
+│   ├── admin.service.ts
+│   └── auth.service.ts    # updateAdminCredentials()
+store/
+├── cart.ts
+├── wishlist.ts
+├── user.ts
+└── ui.ts                  # cartOpen, pickerOpen, toast, authModal
 types/
-└── firebase.ts        # All Firestore TypeScript types
+└── firebase.ts            # FSProduct, FSOrder, FSCategory, CartItem, etc.
 ```
 
 ---
@@ -68,12 +77,12 @@ types/
 - Node.js 18+
 - Firebase project (Firestore + Auth enabled)
 - Cloudinary account
-- Razorpay account (test keys work)
+- Razorpay account (live keys for production)
 - Resend account
 
 ### Environment Variables
 
-Create `.env.local` at the project root:
+Create `.env.local` — **never commit this file**:
 
 ```env
 # Firebase
@@ -91,11 +100,12 @@ CLOUDINARY_API_SECRET=
 
 # Resend
 RESEND_API_KEY=
-ADMIN_EMAIL=your-admin@email.com
+RESEND_FROM=Golden Honey <onboarding@resend.dev>
+ADMIN_EMAIL=kodaigoldenhoney@gmail.com
 
-# Razorpay
-NEXT_PUBLIC_RAZORPAY_KEY_ID=
-RAZORPAY_KEY_ID=
+# Razorpay (live keys)
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_...
+RAZORPAY_KEY_ID=rzp_live_...
 RAZORPAY_KEY_SECRET=
 ```
 
@@ -104,45 +114,47 @@ RAZORPAY_KEY_SECRET=
 ```bash
 npm install
 npm run dev
+# → http://localhost:3000
 ```
-
-Open [http://localhost:3000](http://localhost:3000)
 
 ### Admin Setup
 
 1. Create a Firebase Auth user for the admin email
 2. Visit `/api/setup-admin` to grant super_admin role
 3. Log in at `/admin`
+4. Change email/password from Admin → Settings → "Login Credentials" section
 
 ---
 
 ## Key Features
 
 ### Customer-Facing
-- **Shop** — Product listing with category filters, search, sort
+- **Shop** — Product listing with category filters, search bar, sort
+- **ProductCard** — Single black elevated "Buy" button → bottom sheet with "Add to Cart" + "Buy Now"; stepper when item is in cart
+- **Bottom navigation** — Mobile-only fixed bar: Home, Cart (with badge), Orders, Profile
+- **Floating cart bar** — Slides up from bottom on shop page when cart has items; hides when picker sheet or WhatsApp button would overlap
 - **Product pages** — Weight option selector, stock badges, low-stock warnings
-- **Cart** — Quantity stepper, persistent across sessions (Zustand + localStorage)
-- **Checkout** — Saved address selection, new address form, Razorpay online payment + COD
+- **Cart** — Quantity stepper, persistent (Zustand + localStorage)
+- **Checkout** — Razorpay online payment only (COD removed)
 - **Order success** — Full order summary with Firestore data
 - **Account** — Order history, saved addresses, wishlist
-- **WhatsApp button** — Floating CTA on mobile
+- **WhatsApp button** — Floating CTA on mobile (`bottom-20`); hides when picker sheet is open
 
 ### Admin Panel
-- **Products** — Create/edit/delete with Cloudinary image upload, weight options, stock per variant
-- **Orders** — List + detail view, order status, payment status, tracking number (auto-marks shipped)
-- **Customers** — Profile, order history, saved addresses, live cart
-- **Settings** — Store settings (name, shipping, tax) + change admin login email/password
+- **Products** — Create/edit/delete with Cloudinary image upload, weight options, stock per variant, SEO fields
+- **Orders** — List + detail view, order status, payment status, tracking number
+- **Customers** — Profile, order history, saved addresses, live cart, wishlist count
+- **Settings** — Store settings + change admin login email/password (Firebase re-auth)
 - **Mobile-responsive** — All admin pages work on phones and tablets
 
 ### Email (Resend)
-- **Admin notification** — Full order details sent to admin on every order
-- **Customer shipping** — Tracking number email sent when admin saves tracking (if customer has email)
+- **Admin notification** — Full order details on every order
+- **Customer shipping** — Tracking email when admin saves tracking number
 
-### Content
-- **About page** — Bilingual (English + Tamil) "Why Choose Golden Honey" feature cards
-- **Branded story** — Sivakumar's story sourcing from Kodaikanal tribal communities
-- **Contact page** — Real business phone, email, and both Oddanchatram addresses
-- **Footer** — Real contact info + ALLGOZ TECH copyright
+### Content & Branding
+- **Footer** — Real contact info (kodaigoldenhoney@gmail.com, +91 91595 43104), both Oddanchatram addresses, copyright: ALLGOZ TECH
+- **Contact page** — Real business phone, email, hours, Oddanchatram + Malabar Bakes addresses
+- **About page** — Bilingual (English + Tamil) feature cards, Sivakumar's story
 
 ---
 
@@ -152,23 +164,42 @@ Open [http://localhost:3000](http://localhost:3000)
 |---|---|
 | `products` | Product catalog with weight variants |
 | `categories` | Product categories |
-| `orders` | All orders (admin view) |
-| `customers/{phoneId}` | Customer profiles (phone as doc ID) |
+| `orders` | All orders (admin view, dual-write) |
+| `customers/{phoneId}` | Customer profiles (phone number as doc ID) |
 | `customers/{phoneId}/orders` | Customer order sub-collection |
 | `customers/{phoneId}/addresses` | Saved addresses |
-| `coupons` | Discount codes |
+| `coupons` | Discount codes (schema ready) |
 | `admins` | Admin role + permissions |
 
 ---
 
 ## Deployment
 
-Firebase Hosting (SSR via Cloud Functions Gen 2) — requires Blaze plan.
+Deployed on Vercel (recommended) or Firebase Hosting.
 
 ```bash
 npm run build
-firebase deploy
+# Vercel: push to main → auto-deploy
 ```
+
+Firestore rules:
+```bash
+firebase deploy --only firestore:rules,firestore:indexes
+```
+
+---
+
+## Business Info
+
+| | |
+|---|---|
+| Proprietor | SIVAKUMAR |
+| Company | ALLGOZ TECH |
+| Email | kodaigoldenhoney@gmail.com |
+| Phone | +91 91595 43104 |
+| Hours | Mon–Sat, 9 AM – 6 PM IST |
+| Address 1 | Oddanchatram, Dindigul – 624 619 |
+| Address 2 | Malabar Bakes, near NH83, Periyakarattupatti, Oddanchatram – 624 614 |
 
 ---
 
