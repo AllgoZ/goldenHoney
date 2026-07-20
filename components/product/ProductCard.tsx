@@ -21,7 +21,6 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   const router = useRouter()
   const [imgErr, setImgErr] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [pickerMode, setPickerMode] = useState<'add' | 'buy'>('add')
   const [selectedWeight, setSelectedWeight] = useState(product.weightOptions[0].label)
   const [quantity, setQuantity] = useState(1)
 
@@ -42,44 +41,29 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   const isLowStock   = activeOption.stock > 0 && activeOption.stock <= 3
   const maxQty       = Math.min(10, activeOption.stock || 10)
 
-  function handleAdd(e: React.MouseEvent) {
+  function openPicker(e: React.MouseEvent) {
     e.preventDefault()
     requireAuth(() => {
-      if (product.weightOptions.length === 1) {
-        addToCart(product, activeOption.label, activeOption.price, 1)
-      } else {
-        setPickerMode('add')
-        setPickerOpen(true)
-      }
+      setPickerOpen(true)
     })
   }
 
-  function handleBuy(e: React.MouseEvent) {
+  function handleSheetAdd(e: React.MouseEvent) {
     e.preventDefault()
     requireAuth(() => {
-      if (product.weightOptions.length === 1) {
-        if (!isInCart) addToCart(product, activeOption.label, activeOption.price, 1)
-        router.push('/cart')
-      } else {
-        setPickerMode('buy')
-        setPickerOpen(true)
-      }
+      addToCart(product, selectedWeight, activeOption.price, quantity)
+      setPickerOpen(false)
+      setQuantity(1)
     })
   }
 
-  function handleConfirm(e: React.MouseEvent) {
+  function handleSheetBuy(e: React.MouseEvent) {
     e.preventDefault()
     requireAuth(() => {
-      if (pickerMode === 'buy') {
-        if (!isInCart) addToCart(product, selectedWeight, activeOption.price, quantity)
-        setPickerOpen(false)
-        setQuantity(1)
-        router.push('/cart')
-      } else {
-        addToCart(product, selectedWeight, activeOption.price, quantity)
-        setPickerOpen(false)
-        setQuantity(1)
-      }
+      if (!isInCart) addToCart(product, selectedWeight, activeOption.price, quantity)
+      setPickerOpen(false)
+      setQuantity(1)
+      router.push('/cart')
     })
   }
 
@@ -245,13 +229,16 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
 
                     <div className="flex gap-2">
                       <button
-                        onClick={handleConfirm}
-                        className="flex-1 h-8 rounded-lg bg-honey text-onyx text-xs font-semibold hover:bg-honey-dark transition-colors flex items-center justify-center gap-1"
+                        onClick={handleSheetAdd}
+                        className="flex-1 h-8 rounded-lg bg-honey/15 text-onyx text-xs font-semibold border border-honey/40 hover:bg-honey/30 transition-[background-color] duration-150 flex items-center justify-center gap-1"
                       >
-                        {pickerMode === 'buy'
-                          ? <><Zap size={12} /> Buy Now</>
-                          : <><ShoppingCart size={12} /> Add</>
-                        }
+                        <ShoppingCart size={12} /> Add
+                      </button>
+                      <button
+                        onClick={handleSheetBuy}
+                        className="flex-1 h-8 rounded-lg bg-onyx text-white text-xs font-semibold hover:bg-onyx/80 transition-[background-color] duration-150 flex items-center justify-center gap-1"
+                      >
+                        <Zap size={12} /> Buy Now
                       </button>
                       <button
                         onClick={closePicker}
@@ -265,53 +252,43 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
               )}
             </AnimatePresence>
 
-            {/* Add / Buy / Go to Cart buttons */}
+            {/* Buy button / stepper */}
             {!pickerOpen && (
               <div className="flex gap-2">
                 {isInCart ? (
-                  /* Inline quantity stepper */
-                  <div className="flex-1 flex items-center h-9 rounded-xl border-2 border-honey bg-honey/5">
+                  <>
+                    <div className="flex-1 flex items-center h-9 rounded-xl border-2 border-honey bg-honey/5">
+                      <button
+                        onClick={handleDecrement}
+                        className="w-8 h-full flex-shrink-0 text-onyx hover:bg-honey/30 transition-[background-color] duration-150 flex items-center justify-center rounded-l-[10px]"
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <span className="flex-1 text-center text-sm font-bold text-onyx tabular-nums">
+                        {cartQty}
+                      </span>
+                      <button
+                        onClick={handleIncrement}
+                        disabled={cartQty >= maxQty}
+                        className="w-8 h-full flex-shrink-0 text-onyx hover:bg-honey/30 transition-[background-color] duration-150 flex items-center justify-center rounded-r-[10px] disabled:opacity-30"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
                     <button
-                      onClick={handleDecrement}
-                      className="w-8 h-full flex-shrink-0 text-onyx hover:bg-honey/30 transition-[background-color] duration-150 flex items-center justify-center rounded-l-[10px]"
+                      onClick={(e) => { e.preventDefault(); router.push('/cart') }}
+                      className="flex-1 h-9 rounded-xl text-xs font-semibold bg-onyx text-white hover:bg-onyx/80 transition-[background-color] duration-150 ease-out flex items-center justify-center gap-1"
                     >
-                      <Minus size={12} />
+                      <ShoppingCart size={12} /> Cart
                     </button>
-                    <span className="flex-1 text-center text-sm font-bold text-onyx tabular-nums">
-                      {cartQty}
-                    </span>
-                    <button
-                      onClick={handleIncrement}
-                      disabled={cartQty >= maxQty}
-                      className="w-8 h-full flex-shrink-0 text-onyx hover:bg-honey/30 transition-[background-color] duration-150 flex items-center justify-center rounded-r-[10px] disabled:opacity-30"
-                    >
-                      <Plus size={12} />
-                    </button>
-                  </div>
+                  </>
                 ) : (
                   <button
-                    onClick={handleAdd}
+                    onClick={openPicker}
                     disabled={isOutOfStock}
-                    className="flex-1 h-9 rounded-xl text-xs font-semibold bg-honey text-onyx hover:bg-honey-dark transition-[background-color] duration-150 ease-out flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 h-10 rounded-2xl text-sm font-semibold bg-onyx text-white shadow-[0_4px_16px_rgba(0,0,0,0.22)] active:scale-[0.97] active:shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-[transform,box-shadow] duration-150 ease-out flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <ShoppingCart size={12} /> {isOutOfStock ? 'Out of Stock' : 'Add'}
-                  </button>
-                )}
-                {isInCart ? (
-                  /* Go to Cart — shown after item is added */
-                  <button
-                    onClick={(e) => { e.preventDefault(); router.push('/cart') }}
-                    className="flex-1 h-9 rounded-xl text-xs font-semibold bg-onyx text-white hover:bg-onyx/80 transition-[background-color] duration-150 ease-out flex items-center justify-center gap-1"
-                  >
-                    <ShoppingCart size={12} /> Cart
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleBuy}
-                    disabled={isOutOfStock}
-                    className="flex-1 h-9 rounded-xl text-xs font-semibold bg-onyx text-white hover:bg-onyx/80 transition-[background-color] duration-150 ease-out flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Zap size={12} /> Buy
+                    {isOutOfStock ? 'Out of Stock' : 'Buy'}
                   </button>
                 )}
               </div>
@@ -423,7 +400,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                   </div>
                 </div>
 
-                {/* Total + Add / Buy buttons */}
+                {/* Total + Add / Buy Now buttons */}
                 <div className="flex items-center gap-3">
                   <div className="shrink-0">
                     <p className="text-xs text-onyx/40">Total</p>
@@ -431,17 +408,16 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
                   </div>
                   <div className="flex gap-2 flex-1">
                     <button
-                      onClick={handleConfirm}
-                      className={`flex-1 h-12 rounded-2xl font-bold text-sm active:scale-95 transition-[background-color,transform] duration-150 ease-out flex items-center justify-center gap-2 shadow-lg ${
-                        pickerMode === 'buy'
-                          ? 'bg-onyx text-white shadow-onyx/20'
-                          : 'bg-honey text-onyx shadow-honey/30 hover:bg-honey-dark'
-                      }`}
+                      onClick={handleSheetAdd}
+                      className="flex-1 h-12 rounded-2xl font-bold text-sm active:scale-95 transition-[background-color,transform] duration-150 ease-out flex items-center justify-center gap-2 bg-honey/15 text-onyx border-2 border-honey/30 hover:bg-honey/25"
                     >
-                      {pickerMode === 'buy'
-                        ? <><Zap size={16} /> Buy Now</>
-                        : <><ShoppingCart size={16} /> Add</>
-                      }
+                      <ShoppingCart size={16} /> Add
+                    </button>
+                    <button
+                      onClick={handleSheetBuy}
+                      className="flex-1 h-12 rounded-2xl font-bold text-sm active:scale-95 transition-[background-color,transform] duration-150 ease-out flex items-center justify-center gap-2 bg-onyx text-white shadow-lg shadow-onyx/20"
+                    >
+                      <Zap size={16} /> Buy Now
                     </button>
                   </div>
                 </div>
