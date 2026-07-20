@@ -8,6 +8,7 @@ import ProductCard from '@/components/product/ProductCard'
 import { getProducts } from '@/lib/services/product.service'
 import { getCategories } from '@/lib/services/category.service'
 import { useCart } from '@/hooks/useCart'
+import { useUIStore } from '@/store/ui'
 import { formatINR } from '@/lib/utils'
 import type { FSProduct, FSCategory } from '@/types/firebase'
 
@@ -25,6 +26,7 @@ function ShopContent() {
   const { items } = useCart()
   const cartCount = items.reduce((s, i) => s + i.quantity, 0)
   const cartTotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0)
+  const anyPickerOpen = useUIStore((s) => s.pickerOpen)
 
   useEffect(() => {
     async function loadData() {
@@ -198,9 +200,9 @@ function ShopContent() {
         </>
       )}
 
-      {/* Floating cart bar — slides up when cart has items */}
+      {/* Floating cart bar — hides while any product picker sheet is open */}
       <AnimatePresence>
-        {cartCount > 0 && (
+        {cartCount > 0 && !anyPickerOpen && (
           <motion.div
             initial={{ y: 120 }}
             animate={{ y: 0 }}

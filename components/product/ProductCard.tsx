@@ -10,6 +10,7 @@ import { formatINR, discountPct } from '@/lib/utils'
 import { useCart } from '@/hooks/useCart'
 import { useWishlist } from '@/hooks/useWishlist'
 import { useAuthGate } from '@/hooks/useAuthGate'
+import { useUIStore } from '@/store/ui'
 import Badge from '@/components/ui/Badge'
 
 interface ProductCardProps {
@@ -27,6 +28,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   const { addToCart, items, removeItem, updateQuantity } = useCart()
   const { toggle, has } = useWishlist()
   const { requireAuth } = useAuthGate()
+  const setGlobalPickerOpen = useUIStore((s) => s.setPickerOpen)
   const wished = has(product.id)
 
   const activeOption =
@@ -45,6 +47,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     e.preventDefault()
     requireAuth(() => {
       setPickerOpen(true)
+      setGlobalPickerOpen(true)
     })
   }
 
@@ -53,6 +56,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     requireAuth(() => {
       addToCart(product, selectedWeight, activeOption.price, quantity)
       setPickerOpen(false)
+      setGlobalPickerOpen(false)
       setQuantity(1)
     })
   }
@@ -62,6 +66,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     requireAuth(() => {
       if (!isInCart) addToCart(product, selectedWeight, activeOption.price, quantity)
       setPickerOpen(false)
+      setGlobalPickerOpen(false)
       setQuantity(1)
       router.push('/cart')
     })
@@ -75,6 +80,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   function closePicker(e: React.MouseEvent) {
     e.preventDefault()
     setPickerOpen(false)
+    setGlobalPickerOpen(false)
     setQuantity(1)
   }
 
