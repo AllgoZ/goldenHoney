@@ -236,7 +236,7 @@ function ShopContent() {
 
 export default function ShopPage() {
   return (
-    <main className="pt-24 pb-20 min-h-screen bg-parchment">
+    <main className="pt-24 pb-20 min-h-screen bg-cream">
       <Suspense fallback={<div className="pt-24 text-center text-onyx/40">Loading...</div>}>
         <ShopContent />
       </Suspense>

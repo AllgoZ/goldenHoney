@@ -68,7 +68,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       setPickerOpen(false)
       setGlobalPickerOpen(false)
       setQuantity(1)
-      router.push('/cart')
+      router.push('/checkout')
     })
   }
 
